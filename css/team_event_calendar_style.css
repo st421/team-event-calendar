@@ -2,7 +2,7 @@ table.widefat, #cal {
 	width:900px;
 }
 td.delete {
-	background:url(deletesign.gif) no-repeat 0 5px;
+	background:url(../img/deletesign.gif) no-repeat 0 5px;
 	cursor:pointer;
 }
 #cal {

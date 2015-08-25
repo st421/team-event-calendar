@@ -19,7 +19,7 @@ add_action('wp_ajax_admin_remove_event','tec_admin_delete_event');
 add_filter('query_vars', 'tec_add_event_vars');
 
 function tec_admin_actions() {  
-	wp_register_style('teamEventCalendarStyle', plugins_url('team_event_calendar_style.css', __FILE__));
+	wp_register_style('teamEventCalendarStyle', plugins_url('/css/team_event_calendar_style.css', __FILE__));
 	wp_register_style('datePickerCSS', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css');
 	wp_register_script('datePickerJS', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js');
 	add_menu_page('Team Events', 'Team Events', 'administrator', 'team_events_calendar', 'tec_admin');  

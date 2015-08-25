@@ -1,0 +1,32 @@
+table.widefat, #cal {
+	width:900px;
+}
+td.delete {
+	background:url(deletesign.gif) no-repeat 0 5px;
+	cursor:pointer;
+}
+#cal {
+	padding-top:20px;
+}
+#cal h2 {
+	margin:0;
+	padding:0;
+	float:left;
+}
+div.cal_nav {
+	float:right;
+}
+div.cal_prev, div.cal_next {
+	width:13px;
+	height:20px;
+	cursor:pointer;
+}
+div.cal_prev {
+	float:left;
+	background:url(prev.gif);
+	margin-right:7px;
+}
+div.cal_next {
+	float:right;
+	background:url(next.gif);
+}

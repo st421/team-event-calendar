@@ -1,13 +1,14 @@
 <?php  
 /*
     Plugin Name: Team Event Calendar
-    Plugin URI: http://susanltyler.com/team-event-calendar-plugin
-    Description: An event calendar for easy display of upcoming events.
+    Plugin URI: https://github.com/st421/team-event-calendar/
+    Description: An event calendar for easy display of upcoming events geared towards sports teams.
     Author: S. Tyler 
     Version: 1.0 
     Author URI: susanltyler.com
 */     
 
+// Hooks, shortcodes, global variables, etc.
 $events_table = $wpdb->prefix . "tec_events";
 register_activation_hook(__FILE__,'tec_install');
 register_deactivation_hook(__FILE__, 'tec_uninstall'); 
@@ -18,6 +19,9 @@ add_action('wp_ajax_tec_add_event','tec_save_event');
 add_action('wp_ajax_admin_remove_event','tec_admin_delete_event');
 add_filter('query_vars', 'tec_add_event_vars');
 
+/*
+ * Registers style sheets, menu pages, and scripts for the plugin.
+ */
 function tec_admin_actions() {  
 	wp_register_style('teamEventCalendarStyle', plugins_url('/css/team_event_calendar_style.css', __FILE__));
 	wp_register_style('datePickerCSS', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css');
@@ -52,6 +56,9 @@ function tec_event_template() {
     return $page_template;
 }
 
+/*
+ * Upon install, create a new database for the event calendar.
+ */
 function tec_install() {
 	global $wpdb;
 	$events_table = $wpdb->prefix . "tec_events";
@@ -71,7 +78,12 @@ function tec_install() {
 	}
 }
 
+/*
+ * Gets user submitted data and enters it into the event database.
+ */
 function tec_save_event() {
+	$success_message = "Event successfully updated!";
+	$failure_message = "Oops! Something went wrong!";
 	check_ajax_referer('tec_nonce_1');
 	$event_id = $_POST['id'];
 	$event_title = $_POST['title'];
@@ -82,16 +94,31 @@ function tec_save_event() {
 	$event_description = $_POST['description'];
 	$event_date = tec_format_date($date, '/', '-');
 	if($event_id) {
-		if(tec_update_event_data($event_id,$event_title,$event_date,$event_time,$event_location,$event_brief,$event_description)) {
-			echo "Event successfully updated!";
+		// Update existing event
+		if(tec_update_event_data(
+			$event_id,
+			$event_title,
+			$event_date,
+			$event_time,
+			$event_location,
+			$event_brief,
+			$event_description)) {
+			echo $success_message;
 		} else {
-			echo "Oops! Something went wrong!";
+			echo $failure_message;
 		}
 	} else {
-		if(tec_save_event_data($event_title,$event_date,$event_time,$event_location,$event_brief,$event_description)) {
-			echo "Event successfully added!";
+		// Save new event
+		if(tec_save_event_data(
+			$event_title,
+			$event_date,
+			$event_time,
+			$event_location,
+			$event_brief,
+			$event_description)) {
+			echo $success_message;
 		} else {
-			echo "Oops! Something went wrong!";
+			echo $failure_message;
 		}
 	}	
 	die();
@@ -102,18 +129,30 @@ function tec_admin_delete_event() {
 	tec_delete_event_data($event_id);
 }
 
+/*
+ * Saves a new event to the database.
+ */
 function tec_save_event_data($title,$date,$time,$location,$brief,$description) {
 	global $wpdb, $events_table;
-	$query = "INSERT INTO " . $events_table . " (title,date,time,location,brief,description) VALUES ('" . $title . "','" . $date . "','" . $time . "','" . $location . "','" . $brief. "','" . $description . "');";
+	$event_query = " (title,date,time,location,brief,description) ";
+	$query_values = " ('" . $title . "','" . $date . "','" . $time . "','" . $location . "','" . $brief. "','" . $description . "')";
+	$query = "INSERT INTO " . $events_table . $event_query . "VALUES" . $query_values . ";";
 	if($wpdb->query($query)) return 1; else return 0;
 }
 
+/*
+ * Updates an existing event in the database.
+ */
 function tec_update_event_data($id,$title,$date,$time,$location,$brief,$description) {
 	global $wpdb, $events_table;
-	$query = "UPDATE " . $events_table . " SET title='" . $title . "', date='" . $date . "', time='" . $time . "', location='" . $location . "', brief ='" . $brief . "', description='" . $description . "' WHERE id=" . $id . ";";
+	$query_values = " SET title='" . $title . "', date='" . $date . "', time='" . $time . "', location='" . $location . "', brief ='" . $brief . "', description='" . $description;
+	$query = "UPDATE " . $events_table . $query_values . "' WHERE id=" . $id . ";";
 	if($wpdb->query($query)) return 1; else return 0;
 }
 
+/*
+ * Removes an event from the database.
+ */
 function tec_delete_event_data($id) {
 	global $wpdb, $events_table;
 	$query = "DELETE FROM " . $events_table . " WHERE id='" . $id . "';";
@@ -155,7 +194,7 @@ function tec_format_date($date, $old, $new) {
 }
 
 /* 
-Upon uninstalling the plugin, remove the tables created. 
+ * Upon uninstalling the plugin, remove the tables created. 
 */
 function tec_uninstall() {
 	global $wpdb, $events_table;

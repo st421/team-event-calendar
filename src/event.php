@@ -1,0 +1,84 @@
+<?php
+class EventElement {
+  public $name;
+  public $size;
+  public $value;
+  
+  function __construct($nam, $siz = 0, $val = 0) { 
+    $name = $nam;
+    $size = $siz;
+    $value = $val;
+  } 
+
+  function header() {
+    return "<th>" . $name . "</th>";
+  }
+}
+
+class Title extends EventElement {
+    function __construct($val) { 
+      parent::__construct("Title", 255, $val);
+    }
+}
+
+class Date extends EventElement {
+    function __construct($val) { 
+      parent::__construct("Date", 0, $val);
+    }
+}
+
+class Time extends EventElement {
+    function __construct($val) { 
+      parent::__construct("Time", 20, $val);
+    }
+}
+  
+class Location extends EventElement {
+    function __construct($val) { 
+      parent::__construct("Location", 255, $val);
+    }
+}
+
+class Brief extends EventElement {
+    function __construct($val) { 
+      parent::__construct("Brief", 255, $val);
+    }
+}
+
+class Description extends EventElement {
+    function __construct($val) { 
+      parent::__construct("Description", 600, $val);
+    }
+}
+class Event {
+  public $id;
+  public $title;
+  public $date;
+  public $time;
+  public $location;
+  public $brief;
+  public $description;
+  
+  function __construct($i, $tit, $dat, $tim, $loc, $bri, $des) { 
+    $id = $i;
+    $title = new Title($tit);
+    $date = new Date($dat);
+    $time = new Time($tim);
+    $location = new Location($loc);
+    $brief = new Brief($bri);
+    $description = new Description($des);
+  }
+  
+  function header() {
+    $header = "<thead>";
+    $header .= $title->header();
+    $header .= $date->header();
+    $header .= $time->header();
+    $header .= $location->header();
+    $header .= $brief->header();
+    $header .= $description->header();
+    $header .= "</thead>";
+    return $header;
+  }
+}
+?>

@@ -61,20 +61,16 @@ function tec_event_template() {
  */
 function tec_install() {
 	global $wpdb;
+	$event = new Event();
 	$events_table = $wpdb->prefix . "tec_events";
 	if($wpdb->get_var("SHOW TABLES LIKE '$events_table'") != $events_table) {
-		$sql = "CREATE TABLE " . $events_table . " (
-		        id int NOT NULL AUTO_INCREMENT,
-			title VARCHAR(255),
-			date DATE,
-			time VARCHAR(20),
-			location VARCHAR(255),
-			brief VARCHAR(300),
-			description VARCHAR(500),
-			PRIMARY KEY (id)		
-		);";
+		$sql_query = "CREATE TABLE " . $events_table . " (id int NOT NULL AUTO_INCREMENT,";
+		foreach ($event->fields_as_array() as $event_element) {
+			$sql_query .= $event_element->table_entry() . ",";
+    		}
+		$sql_query .= "PRIMARY KEY (id));";
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-		dbDelta($sql);
+		dbDelta($sql_query);
 	}
 }
 
@@ -84,15 +80,10 @@ function tec_install() {
 function tec_save_event() {
 	$success_message = "Event successfully updated!";
 	$failure_message = "Oops! Something went wrong!";
+	$event = new Event();
 	check_ajax_referer('tec_nonce_1');
 	$event_id = $_POST['id'];
-	$event_title = $_POST['title'];
-	$date = $_POST['date'];
-	$event_time = $_POST['time'];
-	$event_location = $_POST['location'];
-	$event_brief = $_POST['brief'];
-	$event_description = $_POST['description'];
-	$event_date = tec_format_date($date, '/', '-');
+	$event->set_fields($_POST['title'], tec_format_date($_POST['date'], '/', '-'), $_POST['time'], $_POST['location'], $_POST['brief'], $_POST['description']);
 	if($event_id) {
 		// Update existing event
 		if(tec_update_event_data(

@@ -73,7 +73,7 @@ class Event {
   public $brief = new Brief();
   public $description = new Description();
   
-  function __construct($tit, $dat, $tim, $loc, $bri, $des) { 
+  function set_fields($tit, $dat, $tim, $loc, $bri, $des) { 
     $title->value = $tit;
     $date->value = $dat;
     $time->value = $tim;

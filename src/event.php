@@ -13,6 +13,10 @@ class EventElement {
   function header() {
     return "<th>" . $name . "</th>";
   }
+  
+  function name_for_table() {
+    return strtolower($name);
+  }
 }
 
 class Title extends EventElement {
@@ -51,7 +55,6 @@ class Description extends EventElement {
     }
 }
 class Event {
-  public $id;
   public $title;
   public $date;
   public $time;
@@ -59,8 +62,7 @@ class Event {
   public $brief;
   public $description;
   
-  function __construct($i, $tit, $dat, $tim, $loc, $bri, $des) { 
-    $id = $i;
+  function __construct($tit, $dat, $tim, $loc, $bri, $des) { 
     $title = new Title($tit);
     $date = new Date($dat);
     $time = new Time($tim);

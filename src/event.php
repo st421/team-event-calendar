@@ -71,14 +71,15 @@ class Event {
     $description = new Description($des);
   }
   
+  function fields_as_array() {
+    return array($title, $date, $time, $location, $brief, $description);
+  }
+  
   function header() {
     $header = "<thead>";
-    $header .= $title->header();
-    $header .= $date->header();
-    $header .= $time->header();
-    $header .= $location->header();
-    $header .= $brief->header();
-    $header .= $description->header();
+    foreach (fields_as_array() as $event_element) {
+      $header .= $event_element->header();
+    }
     $header .= "</thead>";
     return $header;
   }

@@ -1,8 +1,8 @@
 <?php
 class EventElement {
-  public $name;
-  public $type;
-  public $size;
+  public static $name;
+  public static $type;
+  public static $size;
   public $value;
 
   
@@ -13,27 +13,27 @@ class EventElement {
     $value = $val;
   } 
 
-  function header() {
+  public function header() {
     return "<th>" . $name . "</th>";
   }
   
-  function table_entry() {
+  public function table_entry() {
     return name_for_table() . " " . $type . "(" . $size . ")";
   }
   
-  function name_for_table() {
+  public function name_for_table() {
     return strtolower($name);
   }
 }
 
 class Title extends EventElement {
-    function __construct($val) { 
+    function __construct($val = 0) { 
       parent::__construct("Title", "VARCHAR", 255, $val);
     }
 }
 
 class Date extends EventElement {
-    function __construct($val) { 
+    function __construct($val = 0) { 
       parent::__construct("Date", "DATE", 0, $val);
     }
     
@@ -43,43 +43,43 @@ class Date extends EventElement {
 }
 
 class Time extends EventElement {
-    function __construct($val) { 
+    function __construct($val = 0) { 
       parent::__construct("Time", "VARCHAR", 20, $val);
     }
 }
   
 class Location extends EventElement {
-    function __construct($val) { 
+    function __construct($val = 0) { 
       parent::__construct("Location", "VARCHAR", 255, $val);
     }
 }
 
 class Brief extends EventElement {
-    function __construct($val) { 
+    function __construct($val = 0) { 
       parent::__construct("Brief", "VARCHAR", 255, $val);
     }
 }
 
 class Description extends EventElement {
-    function __construct($val) { 
+    function __construct($val = 0) { 
       parent::__construct("Description", "VARCHAR", 600, $val);
     }
 }
 class Event {
-  public $title;
-  public $date;
-  public $time;
-  public $location;
-  public $brief;
-  public $description;
+  public $title = new Title();
+  public $date = new Date();
+  public $time = new Time();
+  public $location = new Location();
+  public $brief = new Brief();
+  public $description = new Description();
   
   function __construct($tit, $dat, $tim, $loc, $bri, $des) { 
-    $title = new Title($tit);
-    $date = new Date($dat);
-    $time = new Time($tim);
-    $location = new Location($loc);
-    $brief = new Brief($bri);
-    $description = new Description($des);
+    $title->value = $tit;
+    $date->value = $dat;
+    $time->value = $tim;
+    $location->value = $loc;
+    $brief->value = $bri;
+    $description->value = $des;
   }
   
   function fields_as_array() {

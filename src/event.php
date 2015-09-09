@@ -1,17 +1,24 @@
 <?php
 class EventElement {
   public $name;
+  public $type;
   public $size;
   public $value;
+
   
-  function __construct($nam, $siz = 0, $val = 0) { 
+  function __construct($nam, $typ = "VARCHAR", $siz = 0, $val = 0) { 
     $name = $nam;
+    $type = $typ;
     $size = $siz;
     $value = $val;
   } 
 
   function header() {
     return "<th>" . $name . "</th>";
+  }
+  
+  function table_entry() {
+    return name_for_table() . " " . $type . "(" . $size . ")";
   }
   
   function name_for_table() {
@@ -21,37 +28,41 @@ class EventElement {
 
 class Title extends EventElement {
     function __construct($val) { 
-      parent::__construct("Title", 255, $val);
+      parent::__construct("Title", "VARCHAR", 255, $val);
     }
 }
 
 class Date extends EventElement {
     function __construct($val) { 
-      parent::__construct("Date", 0, $val);
+      parent::__construct("Date", "DATE", 0, $val);
+    }
+    
+    function table_entry() {
+      return name_for_table() . " " . $type;
     }
 }
 
 class Time extends EventElement {
     function __construct($val) { 
-      parent::__construct("Time", 20, $val);
+      parent::__construct("Time", "VARCHAR", 20, $val);
     }
 }
   
 class Location extends EventElement {
     function __construct($val) { 
-      parent::__construct("Location", 255, $val);
+      parent::__construct("Location", "VARCHAR", 255, $val);
     }
 }
 
 class Brief extends EventElement {
     function __construct($val) { 
-      parent::__construct("Brief", 255, $val);
+      parent::__construct("Brief", "VARCHAR", 255, $val);
     }
 }
 
 class Description extends EventElement {
     function __construct($val) { 
-      parent::__construct("Description", 600, $val);
+      parent::__construct("Description", "VARCHAR", 600, $val);
     }
 }
 class Event {

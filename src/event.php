@@ -99,8 +99,9 @@ class Event {
   
   function table_row() {
     foreach ($event->fields_as_array() as $event_element) {
-			$sql_query .= $event_element->name_for_table() . ",";
+      $sql_query .= $event_element->name_for_table() . ",";
     }
+    return $sql_query;
   }
 }
 ?>

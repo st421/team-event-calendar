@@ -97,16 +97,23 @@ class Event {
     return $header;
   }
   
-  function table_row_query($chopped = 0) {
+  function table_row_query($chopped = 1) {
     foreach ($event->fields_as_array() as $event_element) {
       $sql_query .= $event_element->name_for_table() . ",";
     }
     return do_chop($chopped, $sql_query);
   }
   
-  function table_row_values($chopped = 0) {
+  function table_row_values($chopped = 1) {
     foreach ($event->fields_as_array() as $event_element) {
       $sql_query .= "'" . $event_element->value . "',";
+    }
+    return do_chop($chopped, $sql_query);
+  }
+  
+  function table_row_update($chopped = 1) {
+    foreach ($event->fields_as_array() as $event_element) {
+      $sql_query .= $event_element->title . "='" . $event_element->value . "',";
     }
     return do_chop($chopped, $sql_query);
   }

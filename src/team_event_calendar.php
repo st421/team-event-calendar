@@ -65,9 +65,7 @@ function tec_install() {
 	$events_table = $wpdb->prefix . "tec_events";
 	if($wpdb->get_var("SHOW TABLES LIKE '$events_table'") != $events_table) {
 		$sql_query = "CREATE TABLE " . $events_table . " (id int NOT NULL AUTO_INCREMENT,";
-		foreach ($event->fields_as_array() as $event_element) {
-			$sql_query .= $event_element->table_entry() . ",";
-    		}
+		$sql_query .= $event->table_row_init();
 		$sql_query .= "PRIMARY KEY (id));";
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 		dbDelta($sql_query);
@@ -83,35 +81,13 @@ function tec_save_event() {
 	$event = new Event();
 	check_ajax_referer('tec_nonce_1');
 	$event_id = $_POST['id'];
-	$event->set_fields($_POST['title'], tec_format_date($_POST['date'], '/', '-'), $_POST['time'], $_POST['location'], $_POST['brief'], $_POST['description']);
-	if($event_id) {
-		// Update existing event
-		if(tec_update_event_data(
-			$event_id,
-			$event_title,
-			$event_date,
-			$event_time,
-			$event_location,
-			$event_brief,
-			$event_description)) {
-			echo $success_message;
-		} else {
-			echo $failure_message;
-		}
+	$event->set_fields($_POST['title'], $_POST['date'], $_POST['time'], $_POST['location'], $_POST['brief'], $_POST['description']);
+
+	if(tec_save_event_data($event, $event_id)) {
+		echo $success_message;
 	} else {
-		// Save new event
-		if(tec_save_event_data(
-			$event_title,
-			$event_date,
-			$event_time,
-			$event_location,
-			$event_brief,
-			$event_description)) {
-			echo $success_message;
-		} else {
-			echo $failure_message;
-		}
-	}	
+		echo $failure_message;
+	}
 	die();
 } 
 
@@ -121,25 +97,22 @@ function tec_admin_delete_event() {
 }
 
 /*
- * Saves a new event to the database.
+ * Saves a new event to the database or updates
+ * an existing event if a valid ID is provided.
  */
-function tec_save_event_data($title,$date,$time,$location,$brief,$description) {
+function tec_save_event_data($event, $id = NULL) {
 	global $wpdb, $events_table;
-	$event_query = " (title,date,time,location,brief,description) ";
-	$query_values = " ('" . $title . "','" . $date . "','" . $time . "','" . $location . "','" . $brief. "','" . $description . "')";
-	$query = "INSERT INTO " . $events_table . $event_query . "VALUES" . $query_values . ";";
+	if(is_null($id)) {
+		$query_vars = " (" . $event->table_row_query() . ") ";
+		$query_vals = " (" . $event->table_row_values() . ")";
+		$query = "INSERT INTO " . $events_table . $query_vars . "VALUES" . $query_vals . ";";
+	} else {
+		$query_values = " SET " . $event->table_row_update();
+		$query = "UPDATE " . $events_table . $query_values . " WHERE id=" . $id . ";";
+	}
 	if($wpdb->query($query)) return 1; else return 0;
 }
 
-/*
- * Updates an existing event in the database.
- */
-function tec_update_event_data($id,$title,$date,$time,$location,$brief,$description) {
-	global $wpdb, $events_table;
-	$query_values = " SET title='" . $title . "', date='" . $date . "', time='" . $time . "', location='" . $location . "', brief ='" . $brief . "', description='" . $description;
-	$query = "UPDATE " . $events_table . $query_values . "' WHERE id=" . $id . ";";
-	if($wpdb->query($query)) return 1; else return 0;
-}
 
 /*
  * Removes an event from the database.
@@ -153,35 +126,30 @@ function tec_delete_event_data($id) {
 function tec_display_calendar($atts) {
 	global $wpdb, $events_table;
 	$calendar_events = $wpdb->get_results("SELECT * FROM " . $events_table . " ORDER BY date ASC;");
-	echo '<table><thead><th>Title</th><th>Date</th><th>Time</th><th>Location</th><th>Brief</th><th>Description</th></thead><tbody>';
+	$main_event = new Event();
+	$table_str = "<table>" . $main_event->header() . "<tbody>";
 	foreach($calendar_events as $event) {
-		echo '<tr><td>' . $event->title . '</td><td>' . $event->date . '</td><td>' . $event->time . '</td><td>' . $event->location . '</td><td>' . $event->brief . '</td><td>' . $event->description . '</td></tr>';
+		$main_event->set_values($event->title,$event->date,$event->time,$event->location,$event->brief,$event->description);
+		$table_str .= $main_event->table_row_string();
 	}
-	echo '</tbody></table>';
+	$table_str .= "</tbody></table>";
 }
 
 function tec_display_upcoming_events($atts) {
 	global $wpdb, $events_table;
 	$query = "SELECT * FROM " . $events_table . " WHERE date >= DATE_FORMAT(NOW(),'%Y-%m-%d') ORDER BY date ASC LIMIT 3;";
 	$upcoming_events = $wpdb->get_results($query);
-	$event_page = get_page_by_title('Event');
 	if($upcoming_events != '') {
-		echo '<ul>';
+		$event_page = get_page_by_title('Event');
+		$main_event = new Event();
+		$list_str = '<ul>';
 		foreach($upcoming_events as $event) {
-			echo '<li><a href="/?page_id=' . $event_page->ID . '&title=' . $event->title . '&date=' . $event->date . '"><h3>' . $event->title . '</h3><h3 class="date">' . tec_format_date($event->date, '-', '.') . '</h3></a>' . $event->brief . '</li></br>';
+			$main_event->set_values($event->title,$event->date,$event->time,$event->location,$event->brief,$event->description);
+			$list_str .= $main_event->list_element_string($event_page->id);
 		}
-		echo '</ul>';
-	}		
-}
-
-function tec_format_date($date, $old, $new) {
-	$pieces = explode($old,$date);
-	if($new == '-') {
-		$new_date = $pieces[2] . $new . $pieces[0] . $new . $pieces[1];
-	} else {
-		$new_date = $pieces[1] . $new . $pieces[2] . $new . $pieces[0];
+		$list_str .= '</ul>';
+		echo $list_str;
 	}
-	return $new_date;
 }
 
 /* 

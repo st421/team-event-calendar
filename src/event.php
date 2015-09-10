@@ -17,6 +17,8 @@ class EventElement {
     return "<th>" . $name . "</th>";
   }
   
+  
+  
   public function table_entry() {
     return name_for_table() . " " . $type . "(" . $size . ")";
   }
@@ -93,6 +95,12 @@ class Event {
     }
     $header .= "</thead>";
     return $header;
+  }
+  
+  function table_row() {
+    foreach ($event->fields_as_array() as $event_element) {
+			$sql_query .= $event_element->name_for_table() . ",";
+    }
   }
 }
 ?>

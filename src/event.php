@@ -106,7 +106,7 @@ class Event {
   
   function table_row_values($chopped = 0) {
     foreach ($event->fields_as_array() as $event_element) {
-      $sql_query .= $event_element->value . ",";
+      $sql_query .= "'" . $event_element->value . "',";
     }
     return do_chop($chopped, $sql_query);
   }

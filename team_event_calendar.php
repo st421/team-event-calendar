@@ -32,7 +32,7 @@ function tec_admin_actions() {
 } 
 
 function tec_admin() {  
-        include('tec_admin_page.php');  
+    include('tec_admin_page.php');  
 }
 
 function tec_add_new_event() {

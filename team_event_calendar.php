@@ -32,7 +32,7 @@ function tec_admin_actions() {
 } 
 
 function tec_admin() {  
-  include('tec_admin_page.php');  
+	include('tec_admin_page.php');  
 }
 
 function tec_add_new_event() {
@@ -50,10 +50,10 @@ function tec_add_event_vars($vars) {
 }
 
 function tec_event_template() {
-  if(is_page('event')) {
-    $page_template = dirname( __FILE__ ) . '/event.php';
-  }
-  return $page_template;
+	if(is_page('event')) {
+		$page_template = dirname( __FILE__ ) . '/event.php';
+	}
+	return $page_template;
 }
 
 /*
@@ -64,7 +64,7 @@ function tec_install() {
 	$events_table = $wpdb->prefix . "tec_events";
 	if($wpdb->get_var("SHOW TABLES LIKE '$events_table'") != $events_table) {
 		$sql = "CREATE TABLE " . $events_table . " (
-		  id int NOT NULL AUTO_INCREMENT,
+			id int NOT NULL AUTO_INCREMENT,
 			title VARCHAR(255),
 			date DATE,
 			time VARCHAR(20),

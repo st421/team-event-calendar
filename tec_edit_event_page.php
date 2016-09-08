@@ -1,5 +1,5 @@
-<?php wp_enqueue_style('datePickerCSS'); ?>
-<?php wp_enqueue_script('datePickerJS'); ?>
+<?php wp_enqueue_script('jquery-ui-datepicker'); ?>
+<?php wp_enqueue_style('jquery-ui'); ?>
 <script>  
 jQuery(document).ready(function(){
 	jQuery('#date').datepicker();  

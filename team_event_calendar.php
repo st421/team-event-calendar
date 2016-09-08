@@ -5,38 +5,80 @@
     Description: An event calendar for easy display of upcoming events.
     Author: S. Tyler 
     Version: 1.0 
-    Author URI: susanltyler.com
-*/     
+    Author URI: http://susanltyler.com
+*/
+
+include('wp_sql_helper.php');
 
 $events_table = $wpdb->prefix . "tec_events";
+$event_params = array(
+  new TableField("title","VARCHAR(255)"),
+  new TableField("date","DATE"),
+  new TableField("time","VARCHAR(20)"),
+  new TableField("location","VARCHAR(255)"),
+  new TableField("description","VARCHAR(500)")
+);
+
 register_activation_hook(__FILE__,'tec_install');
 register_deactivation_hook(__FILE__, 'tec_uninstall'); 
+
 add_shortcode('calendar','tec_display_calendar');
 add_shortcode('upcoming_events','tec_display_upcoming_events');
-add_action('admin_menu','tec_admin_actions');  
-add_action('wp_ajax_tec_add_event','tec_save_event');
+
+add_action('admin_menu','tec_admin_setup');  
+add_action('wp_ajax_tec_save_event','tec_save_event');
 add_action('wp_ajax_admin_remove_event','tec_admin_delete_event');
+
 add_filter('query_vars', 'tec_add_event_vars');
 
-function tec_admin_actions() {  
-	wp_register_style('teamEventCalendarStyle', plugins_url('team_event_calendar_style.css', __FILE__));
-	wp_register_style('datePickerCSS', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css');
-	wp_register_script('datePickerJS', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js');
+/*
+ * Registers style sheets and menu pages.
+ */
+function tec_admin_setup() {  
+	wp_register_style('bootstrap', '//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css');
+	wp_register_style('jquery-ui', '//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css');
+	wp_register_style('tec-style', plugins_url('css/team_event_calendar_style.css', __FILE__));
 	add_menu_page('Team Events', 'Team Events', 'administrator', 'team_events_calendar', 'tec_admin');  
-	add_submenu_page('team_events_calendar', 'Add New Event', 'Add New Event', 'administrator', 'tec_add_new_event', 'tec_add_new_event');
-	add_submenu_page(NULL, 'Edit Event', 'Edit Event', 'administrator', 'tec_edit_old_event', 'tec_edit_old_event');
+	add_submenu_page('team_events_calendar', 'Add New Event', 'Add New Event', 'administrator', 'tec_add_event', 'tec_add_event');
+	add_submenu_page(NULL, 'Edit Event', 'Edit Event', 'administrator', 'tec_edit_event', 'tec_edit_event');
 } 
 
 function tec_admin() {  
-        include('tec_admin_page.php');  
+  include('tec_admin_page.php');  
 }
 
-function tec_add_new_event() {
-	include('tec_add_new_event_page.php');
+function tec_add_event() {
+	include('tec_add_event_page.php');
 }
 
-function tec_edit_old_event() {
+function tec_edit_event() {
 	include('tec_edit_event_page.php');
+}
+
+/*
+ * Calls functions necessary for plugin install. 
+ * 1) Creates table in database for events.
+ */
+function tec_install() {
+	create_table($events_table);
+}
+
+/*
+ * Calls functions necessary for plugin uninstall. 
+ * 1) Drops table in database for events.
+ */
+function tec_uninstall() {
+	drop_table($events_table);
+}
+
+function tec_save_event() {
+	check_ajax_referer('tec_nonce_1');
+	if(save_table_item($events_table, $event_params, $_POST)) {
+		echo "Event successfully saved";
+	} else {
+		echo "Error; event NOT saved";
+	}
+	die();
 }
 
 function tec_add_event_vars($vars) {
@@ -46,31 +88,13 @@ function tec_add_event_vars($vars) {
 }
 
 function tec_event_template() {
-    if(is_page('event')) {
-        $page_template = dirname( __FILE__ ) . '/event.php';
-    }
-    return $page_template;
+  if(is_page('event')) {
+    $page_template = dirname( __FILE__ ) . '/event.php';
+  }
+  return $page_template;
 }
 
-function tec_install() {
-	global $wpdb;
-	$events_table = $wpdb->prefix . "tec_events";
-	if($wpdb->get_var("SHOW TABLES LIKE '$events_table'") != $events_table) {
-		$sql = "CREATE TABLE " . $events_table . " (
-		        id int NOT NULL AUTO_INCREMENT,
-			title VARCHAR(255),
-			date DATE,
-			time VARCHAR(20),
-			location VARCHAR(255),
-			brief VARCHAR(300),
-			description VARCHAR(500),
-			PRIMARY KEY (id)		
-		);";
-		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-		dbDelta($sql);
-	}
-}
-
+/*
 function tec_save_event() {
 	check_ajax_referer('tec_nonce_1');
 	$event_id = $_POST['id'];
@@ -95,7 +119,7 @@ function tec_save_event() {
 		}
 	}	
 	die();
-} 
+}
 
 function tec_admin_delete_event() {
 	$event_id = $_POST['ID_to_delete'];
@@ -119,13 +143,14 @@ function tec_delete_event_data($id) {
 	$query = "DELETE FROM " . $events_table . " WHERE id='" . $id . "';";
 	$wpdb->query($query);
 }
+*/
 
 function tec_display_calendar($atts) {
 	global $wpdb, $events_table;
 	$calendar_events = $wpdb->get_results("SELECT * FROM " . $events_table . " ORDER BY date ASC;");
-	echo '<table><thead><th>Title</th><th>Date</th><th>Time</th><th>Location</th><th>Brief</th><th>Description</th></thead><tbody>';
+	echo '<table class="table table-responsive table-hover"><thead><th>Title</th><th>Date</th><th>Time</th><th>Location</th><th>Description</th></thead><tbody>';
 	foreach($calendar_events as $event) {
-		echo '<tr><td>' . $event->title . '</td><td>' . $event->date . '</td><td>' . $event->time . '</td><td>' . $event->location . '</td><td>' . $event->brief . '</td><td>' . $event->description . '</td></tr>';
+		echo '<tr><td>' . $event->title . '</td><td>' . $event->date . '</td><td>' . $event->time . '</td><td>' . $event->location . '</td><td>' . $event->description . '</td></tr>';
 	}
 	echo '</tbody></table>';
 }
@@ -154,11 +179,5 @@ function tec_format_date($date, $old, $new) {
 	return $new_date;
 }
 
-/* 
-Upon uninstalling the plugin, remove the tables created. 
-*/
-function tec_uninstall() {
-	global $wpdb, $events_table;
-	$wpdb->query("DROP TABLE IF EXISTS " . $events_table . ";");
-}
+
 ?>

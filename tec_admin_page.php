@@ -1,4 +1,4 @@
-<?php wp_enqueue_style('teamEventCalendarStyle'); ?>
+<?php wp_enqueue_style('tec-style'); ?>
 <?php tec_admin_remove_event(); ?>
 <h1>Team Events Calendar Plugin</h1>
 <h3>Events</h3>

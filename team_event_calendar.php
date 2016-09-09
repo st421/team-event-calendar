@@ -60,6 +60,7 @@ function tec_edit_event() {
  * 1) Creates table in database for events.
  */
 function tec_install() {
+	global $events_table;
 	create_table($events_table);
 }
 
@@ -68,12 +69,14 @@ function tec_install() {
  * 1) Drops table in database for events.
  */
 function tec_uninstall() {
+	global $events_table;
 	drop_table($events_table);
 }
 
 function tec_save_event() {
-	check_ajax_referer('tec_nonce_1');
-	if(save_table_item($events_table, $event_params, $_POST)) {
+	global $events_table, $event_params;
+	check_ajax_referer('tec_nonce_1','security');
+	if(save_table_item($events_table,$event_params,$_POST)) {
 		echo "Event successfully saved";
 	} else {
 		echo "Error; event NOT saved";

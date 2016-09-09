@@ -1,20 +1,12 @@
 <?php  
-/*
-    Plugin Name: Team Event Calendar
-    Plugin URI: http://susanltyler.com/team-event-calendar-plugin
-    Description: An event calendar for easy display of upcoming events.
-    Author: S. Tyler 
-    Version: 1.0 
-    Author URI: http://susanltyler.com
-*/     
 
 class TableField { 
   public $name; 
   public $sql; 
   
   function __construct($namey, $sqly) {
-    $name = $namey;
-    $sql = $sqly;
+    $this->name = $namey;
+    $this->sql = $sqly;
   }
 }
 
@@ -44,7 +36,7 @@ function drop_table($table_name) {
 function table_sql($table_params) {
 	$sql = "id int NOT NULL AUTO_INCREMENT,";
 	foreach($table_params as $param) {
-		$sql .= $param->$name . " " . $param->$sql . ",";
+		$sql .= $param->name . " " . $param->sql . ",";
 	}
 	$sql .= "PRIMARY KEY (id)";
 	return $sql;
@@ -62,22 +54,28 @@ function table_exists($table_name) {
  * Adds or updates the table with the given parameters and POST data.
  */
 function save_table_item($table_name, $table_params, $post_data) {
-  $result = 0;
-	$id = $post_data['id'];
-	if($id) {
-	  $insert .= "id,";
-	  $vals .= "'" . $id . "',";
+	global $wpdb;
+	$wpdb->show_errors();
+	$result = 0;
+	$id = sanitize_text_field($post_data['id']);
+	$insert = "";
+	$vals = "";
+	if(!empty($id)) {
+		$insert .= "id,";
+		$vals .= "'" . $id . "',";
 	}
 	foreach($table_params as $param) {
-	  $insert .= $param->$name . ",";
-	  if($param->$name == "date") {
-	    $post_data["date"] = tec_format_date($post_data["date"], '/', '-');
-	  }
-	  $vals .= "'" . $post_data[$param->$name] . "',";
+		$insert .= $param->name . ",";
+		if($param->name == "date") {
+	    	$post_data["date"] = tec_format_date(sanitize_text_field($post_data["date"]), '/', '-');
+		}
+		$vals .= "'" . sanitize_text_field($post_data[$param->name]) . "',";
 	}
+	$vals = substr($vals, 0, -1);
+	$insert = substr($insert, 0, -1);
 	$query = "INSERT INTO " . $table_name . " (" . $insert . ") VALUES (" . $vals . ") ON DUPLICATE KEY UPDATE;";
 	if($wpdb->query($query)) {
-	  $result = 1;
+		$result = 1;
 	}
 	return $result;
 }

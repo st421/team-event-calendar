@@ -10,6 +10,7 @@
 
 include('wp_sql_helper.php');
 
+global $events_table, $event_params, $wpdb;
 $events_table = $wpdb->prefix . "tec_events";
 $event_params = array(
   new TableField("title","VARCHAR(255)"),
@@ -20,16 +21,34 @@ $event_params = array(
 );
 
 register_activation_hook(__FILE__,'tec_install');
-register_deactivation_hook(__FILE__, 'tec_uninstall'); 
+register_deactivation_hook(__FILE__,'tec_uninstall'); 
 
-add_shortcode('calendar','tec_display_calendar');
+add_shortcode('calendar','tec_user_calendar');
 add_shortcode('upcoming_events','tec_display_upcoming_events');
 
 add_action('admin_menu','tec_admin_setup');  
 add_action('wp_ajax_tec_save_event','tec_save_event');
-add_action('wp_ajax_admin_remove_event','tec_admin_delete_event');
+add_action('wp_ajax_tec_delete_event','tec_delete_event');
 
 add_filter('query_vars', 'tec_add_event_vars');
+
+/*
+ * Calls functions necessary for plugin install.
+ * -Creates table in database for events.
+ */
+function tec_install() {
+	global $events_table, $event_params;
+	create_table($events_table,$event_params);
+}
+
+/*
+ * Calls functions necessary for plugin uninstall. 
+ * -Drops events table in database.
+ */
+function tec_uninstall() {
+	global $events_table;
+	drop_table($events_table);
+}
 
 /*
  * Registers style sheets and menu pages.
@@ -44,7 +63,7 @@ function tec_admin_setup() {
 } 
 
 function tec_admin() {  
-  include('tec_admin_page.php');  
+	include('tec_admin_page.php');  
 }
 
 function tec_add_event() {
@@ -55,107 +74,82 @@ function tec_edit_event() {
 	include('tec_edit_event_page.php');
 }
 
-/*
- * Calls functions necessary for plugin install. 
- * 1) Creates table in database for events.
- */
-function tec_install() {
-	global $events_table;
-	create_table($events_table);
-}
-
-/*
- * Calls functions necessary for plugin uninstall. 
- * 1) Drops table in database for events.
- */
-function tec_uninstall() {
-	global $events_table;
-	drop_table($events_table);
-}
-
 function tec_save_event() {
+	check_ajax_referer('tec_nonce_save','security');
 	global $events_table, $event_params;
-	check_ajax_referer('tec_nonce_1','security');
 	if(save_table_item($events_table,$event_params,$_POST)) {
 		echo "Event successfully saved";
 	} else {
-		echo "Error; event NOT saved";
+		echo "ERROR; event not saved. Did you provide all parameters?";
 	}
 	die();
 }
 
-function tec_add_event_vars($vars) {
-	$vars[0] = 'title';
-	$vars[1] = 'date';
-	return $vars;
-}
-
-function tec_event_template() {
-  if(is_page('event')) {
-    $page_template = dirname( __FILE__ ) . '/event.php';
-  }
-  return $page_template;
-}
-
-/*
-function tec_save_event() {
-	check_ajax_referer('tec_nonce_1');
-	$event_id = $_POST['id'];
-	$event_title = $_POST['title'];
-	$date = $_POST['date'];
-	$event_time = $_POST['time'];
-	$event_location = $_POST['location'];
-	$event_brief = $_POST['brief'];
-	$event_description = $_POST['description'];
-	$event_date = tec_format_date($date, '/', '-');
-	if($event_id) {
-		if(tec_update_event_data($event_id,$event_title,$event_date,$event_time,$event_location,$event_brief,$event_description)) {
-			echo "Event successfully updated!";
-		} else {
-			echo "Oops! Something went wrong!";
-		}
-	} else {
-		if(tec_save_event_data($event_title,$event_date,$event_time,$event_location,$event_brief,$event_description)) {
-			echo "Event successfully added!";
-		} else {
-			echo "Oops! Something went wrong!";
-		}
-	}	
+function tec_delete_event() {
+	check_ajax_referer('tec_nonce_del','security');
+	global $events_table;
+	delete_table_item($events_table, $_POST);
 	die();
 }
 
-function tec_admin_delete_event() {
-	$event_id = $_POST['ID_to_delete'];
-	tec_delete_event_data($event_id);
+function tec_user_calendar($atts) {
+	echo tec_display_calendar();
 }
 
-function tec_save_event_data($title,$date,$time,$location,$brief,$description) {
-	global $wpdb, $events_table;
-	$query = "INSERT INTO " . $events_table . " (title,date,time,location,brief,description) VALUES ('" . $title . "','" . $date . "','" . $time . "','" . $location . "','" . $brief. "','" . $description . "');";
-	if($wpdb->query($query)) return 1; else return 0;
+function tec_admin_calendar() {
+	echo tec_display_calendar(true);
 }
 
-function tec_update_event_data($id,$title,$date,$time,$location,$brief,$description) {
-	global $wpdb, $events_table;
-	$query = "UPDATE " . $events_table . " SET title='" . $title . "', date='" . $date . "', time='" . $time . "', location='" . $location . "', brief ='" . $brief . "', description='" . $description . "' WHERE id=" . $id . ";";
-	if($wpdb->query($query)) return 1; else return 0;
+function tec_add_event_form() {
+	global $event_params;
+	$form = '<form id="add_event_form">';
+	foreach($event_params as $param) {
+		$form .= '<div class="form-group">';
+		$form .= '<label for="' . $param->name . '">' . $param->name . '</label>';
+		if($param->name == 'description') {
+			$form .= '<textarea type="text" class="form-control" id="' . $param->name . '" COLS=100 ROWS=5></textarea>';
+		} else {
+			$form .= '<input type="text" class="form-control" id="' . $param->name . '">';	
+		}
+		$form .= '</div>';
+	}
+	$form .= '<button type="submit" name="action" id="submit_event_form" class="btn">Submit</button></form>';
+	return $form;
 }
 
-function tec_delete_event_data($id) {
-	global $wpdb, $events_table;
-	$query = "DELETE FROM " . $events_table . " WHERE id='" . $id . "';";
-	$wpdb->query($query);
-}
-*/
-
-function tec_display_calendar($atts) {
-	global $wpdb, $events_table;
-	$calendar_events = $wpdb->get_results("SELECT * FROM " . $events_table . " ORDER BY date ASC;");
-	echo '<table class="table table-responsive table-hover"><thead><th>Title</th><th>Date</th><th>Time</th><th>Location</th><th>Description</th></thead><tbody>';
+function tec_display_calendar($admin=false) {
+	global $events_table, $event_params;
+	$calendar_events = get_all_by_date($events_table);
+	$table = '<table id="tec_calendar" class="table table-responsive table-hover"><thead>';
+	foreach($event_params as $param) {
+		$table .= '<th>' . $param->name . '</th>';
+	}
+	if($admin) {
+		$table .= '<th>Delete?</th>';
+	}
+	$table .= '</thead><tbody>';
 	foreach($calendar_events as $event) {
-		echo '<tr><td>' . $event->title . '</td><td>' . $event->date . '</td><td>' . $event->time . '</td><td>' . $event->location . '</td><td>' . $event->description . '</td></tr>';
+		$table .= '<tr>';
+		foreach($event_params as $param) {
+			$table .= '<td>';
+			if($param->name == 'date') {
+				$table .= tec_format_date($event->date,'-','/');
+			} else if($param->name == 'title' && $admin) {
+				$path = 'admin.php?page=tec_edit_old_event&id=' . $event->id;
+				$url = admin_url($path);
+				$table .= '<a href="' . $url . '">' . $event->title . '</a>';
+			} else {
+				$table .= get_object_vars($event)[$param->name];
+			}
+			$table .= '</td>';
+		}
+		if($admin) {
+			$table .= '<td id="' . $event->id . '" class="delete"></td>';
+		}
+		$table .= '</tr>';
 	}
-	echo '</tbody></table>';
+	$table .= '</tbody></table>';
+	return $table;
 }
 
 function tec_display_upcoming_events($atts) {
@@ -182,5 +176,16 @@ function tec_format_date($date, $old, $new) {
 	return $new_date;
 }
 
+function tec_add_event_vars($vars) {
+	$vars[0] = 'title';
+	$vars[1] = 'date';
+	return $vars;
+}
 
+function tec_event_template() {
+  if(is_page('event')) {
+    $page_template = dirname( __FILE__ ) . '/event.php';
+  }
+  return $page_template;
+}
 ?>

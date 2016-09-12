@@ -15,6 +15,8 @@ class TableField {
  * Creates a table with the given name, if one doesn't exist.
  */
 function create_table($table_name, $table_params) {
+	global $wpdb;
+	$wpdb->show_errors();
 	if(!table_exists($table_name)) {
 		$sql = "CREATE TABLE " . $table_name . " (" . table_sql($table_params) . ");";
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -34,11 +36,11 @@ function drop_table($table_name) {
  * Creates a SQL statement for the table columns.
  */
 function table_sql($table_params) {
-	$sql = "id int NOT NULL AUTO_INCREMENT,";
+	$sql = "id int NOT NULL AUTO_INCREMENT,\n";
 	foreach($table_params as $param) {
-		$sql .= $param->name . " " . $param->sql . ",";
+		$sql .= $param->name . " " . $param->sql . ",\n";
 	}
-	$sql .= "PRIMARY KEY (id)";
+	$sql .= "PRIMARY KEY  (id)";
 	return $sql;
 }
 
@@ -55,7 +57,6 @@ function table_exists($table_name) {
  */
 function save_table_item($table_name, $table_params, $post_data) {
 	global $wpdb;
-	$wpdb->show_errors();
 	$result = 0;
 	$id = sanitize_text_field($post_data['id']);
 	$insert = "";
@@ -73,14 +74,20 @@ function save_table_item($table_name, $table_params, $post_data) {
 	}
 	$vals = substr($vals, 0, -1);
 	$insert = substr($insert, 0, -1);
-	$query = "INSERT INTO " . $table_name . " (" . $insert . ") VALUES (" . $vals . ") ON DUPLICATE KEY UPDATE;";
+	$query = "INSERT INTO " . $table_name . " (" . $insert . ") VALUES (" . $vals . ");";
 	if($wpdb->query($query)) {
 		$result = 1;
 	}
 	return $result;
 }
 
+function get_all_by_date($table_name) {
+	global $wpdb;
+	return $wpdb->get_results("SELECT * FROM " . $table_name . " ORDER BY date ASC;");
+}
+
 function delete_table_item($table_name, $post_data) {
+	global $wpdb;
 	$id = $post_data['id'];
 	$query = "DELETE FROM " . $table_name . " WHERE id='" . $id . "';";
 	$wpdb->query($query);

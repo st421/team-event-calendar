@@ -18,14 +18,25 @@ jQuery(document).ready(function(){
 			'security': '<?php echo $nonce; ?>'
 		};
 		jQuery.post(ajaxurl, data, function(response) {
-			jQuery("#add_event_form").fadeOut("fast");
+			jQuery("#event_form").fadeOut("fast");
 			jQuery("#event_submitted").html(response);
 			jQuery("#event_submitted").fadeIn("fast");
 		});
 		return false;
 	});
 });
-</script> 
-<h1>Add a new event</h1>
-<?php echo tec_add_event_form(); ?>
+</script>
+<?php 
+$edit = false;
+$id = $_GET['id'];
+if(!empty($id)) {
+  $edit = true;
+}
+?>
+<?php if($edit) { ?>
+<h1>Edit event</h1>
+<?php echo tec_edit_event_form($id); ?>
+<?php } else { ?>
+<h1>Add new event</h1>
+<?php echo tec_add_event_form(); } ?>
 <div id='event_submitted'></div>

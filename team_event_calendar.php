@@ -58,20 +58,33 @@ function tec_admin_setup() {
 	wp_register_style('jquery-ui', '//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css');
 	wp_register_style('tec-style', plugins_url('css/team_event_calendar_style.css', __FILE__));
 	add_menu_page('Team Events', 'Team Events', 'administrator', 'team_events_calendar', 'tec_admin');  
-	add_submenu_page('team_events_calendar', 'Add New Event', 'Add New Event', 'administrator', 'tec_add_event', 'tec_add_event');
-	add_submenu_page(NULL, 'Edit Event', 'Edit Event', 'administrator', 'tec_edit_event', 'tec_edit_event');
+	add_submenu_page('team_events_calendar', 'Add New Event', 'Add New Event', 'administrator', 'tec-event', 'tec_event_page');
+	add_submenu_page(NULL, 'Edit Event', 'Edit Event', 'administrator', 'tec-event', 'tec_event_page');
 } 
 
 function tec_admin() {  
 	include('tec_admin_page.php');  
 }
 
-function tec_add_event() {
-	include('tec_add_event_page.php');
+function tec_event_page() {
+	include('tec_event_page.php');
 }
 
-function tec_edit_event() {
-	include('tec_edit_event_page.php');
+function tec_user_calendar($atts) {
+	echo tec_display_calendar();
+}
+
+function tec_admin_calendar() {
+	echo tec_display_calendar(true);
+}
+
+function tec_edit_event_form($id) {
+	global $events_table;
+	return tec_event_form(true, get_item_by_id($events_table, $id));
+}
+
+function tec_add_event_form() {
+	return tec_event_form();
 }
 
 function tec_save_event() {
@@ -92,24 +105,24 @@ function tec_delete_event() {
 	die();
 }
 
-function tec_user_calendar($atts) {
-	echo tec_display_calendar();
-}
-
-function tec_admin_calendar() {
-	echo tec_display_calendar(true);
-}
-
-function tec_add_event_form() {
+function tec_event_form($edit=false, $event=NULL) {
 	global $event_params;
-	$form = '<form id="add_event_form">';
+	$form = '<form id="event_form">';
 	foreach($event_params as $param) {
 		$form .= '<div class="form-group">';
 		$form .= '<label for="' . $param->name . '">' . $param->name . '</label>';
 		if($param->name == 'description') {
-			$form .= '<textarea type="text" class="form-control" id="' . $param->name . '" COLS=100 ROWS=5></textarea>';
+			$form .= '<textarea type="text" class="form-control" id="' . $param->name . '" COLS=100 ROWS=5>';
+			if($edit) {
+				$form .= get_object_vars($event)[$param->name];
+			}
+			$form .= '</textarea>';
 		} else {
-			$form .= '<input type="text" class="form-control" id="' . $param->name . '">';	
+			$form .= '<input type="text" class="form-control" id="' . $param->name . '"';
+			if($edit) {
+				$form .= ' value="' . get_object_vars($event)[$param->name] . '"';
+			}
+			$form .= '>';	
 		}
 		$form .= '</div>';
 	}
@@ -135,7 +148,7 @@ function tec_display_calendar($admin=false) {
 			if($param->name == 'date') {
 				$table .= tec_format_date($event->date,'-','/');
 			} else if($param->name == 'title' && $admin) {
-				$path = 'admin.php?page=tec_edit_old_event&id=' . $event->id;
+				$path = 'admin.php?page=tec-event&id=' . $event->id;
 				$url = admin_url($path);
 				$table .= '<a href="' . $url . '">' . $event->title . '</a>';
 			} else {

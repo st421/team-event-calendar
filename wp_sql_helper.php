@@ -86,6 +86,12 @@ function get_all_by_date($table_name) {
 	return $wpdb->get_results("SELECT * FROM " . $table_name . " ORDER BY date ASC;");
 }
 
+function get_item_by_id($table_name, $id) {
+	global $wpdb;
+	$item = $wpdb->get_results("SELECT * FROM " . $table_name . " WHERE id='" . $id . "';");
+	return $item[0];
+}
+
 function delete_table_item($table_name, $post_data) {
 	global $wpdb;
 	$id = $post_data['id'];

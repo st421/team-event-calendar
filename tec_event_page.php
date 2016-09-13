@@ -5,17 +5,16 @@
 <script>  
 jQuery(document).ready(function(){
 	jQuery('#date').datepicker();  
-});
-jQuery(document).ready(function(){
-  jQuery('#submit_event_form').click(function(){ 
+	jQuery('#submit_event_form').click(function(){ 
 		var data = {
 			'action':'tec_save_event', 
-			'title': jQuery('#title').val(), 
-			'date': jQuery('#date').val(), 
-			'time': jQuery('#time').val(), 
-			'location': jQuery('#location').val(), 
-			'description': jQuery('#description').val(),
-			'security': '<?php echo $nonce; ?>'
+			'id':jQuery(this).attr('name'),
+			'title':jQuery('#title').val(), 
+			'date':jQuery('#date').val(), 
+			'time':jQuery('#time').val(), 
+			'location':jQuery('#location').val(), 
+			'description':jQuery('#description').val(),
+			'security':'<?php echo $nonce; ?>'
 		};
 		jQuery.post(ajaxurl, data, function(response) {
 			jQuery("#event_form").fadeOut("fast");

@@ -23,14 +23,12 @@ $event_params = array(
 register_activation_hook(__FILE__,'tec_install');
 register_deactivation_hook(__FILE__,'tec_uninstall'); 
 
-add_shortcode('calendar','tec_user_calendar');
+add_shortcode('calendar','tec_display_user_calendar');
 add_shortcode('upcoming_events','tec_display_upcoming_events');
 
 add_action('admin_menu','tec_admin_setup');  
 add_action('wp_ajax_tec_save_event','tec_save_event');
 add_action('wp_ajax_tec_delete_event','tec_delete_event');
-
-add_filter('query_vars', 'tec_add_event_vars');
 
 /*
  * Calls functions necessary for plugin install.
@@ -70,12 +68,16 @@ function tec_event_page() {
 	include('tec_event_page.php');
 }
 
-function tec_user_calendar($atts) {
-	echo tec_display_calendar();
+function tec_display_user_calendar($atts) {
+	echo tec_get_calendar();
 }
 
-function tec_admin_calendar() {
-	echo tec_display_calendar(true);
+function tec_display_admin_calendar() {
+	echo tec_get_calendar(true);
+}
+
+function tec_display_upcoming_events($atts) {
+	echo tec_get_upcoming_events();
 }
 
 function tec_edit_event_form($id) {
@@ -90,10 +92,15 @@ function tec_add_event_form() {
 function tec_save_event() {
 	check_ajax_referer('tec_nonce_save','security');
 	global $events_table, $event_params;
-	if(save_table_item($events_table,$event_params,$_POST)) {
+	if(!empty($_POST['id'])) {
+		$success = update_table_item($events_table,$event_params,$_POST);
+	} else {
+		$success = save_table_item($events_table,$event_params,$_POST);
+	}
+	if($success) {
 		echo "Event successfully saved";
 	} else {
-		echo "ERROR; event not saved. Did you provide all parameters?";
+		echo "ERROR; event not saved";
 	}
 	die();
 }
@@ -126,11 +133,11 @@ function tec_event_form($edit=false, $event=NULL) {
 		}
 		$form .= '</div>';
 	}
-	$form .= '<button type="submit" name="action" id="submit_event_form" class="btn">Submit</button></form>';
+	$form .= '<button type="submit" name="' . $event->id . '" id="submit_event_form" class="btn">Submit</button></form>';
 	return $form;
 }
 
-function tec_display_calendar($admin=false) {
+function tec_get_calendar($admin=false) {
 	global $events_table, $event_params;
 	$calendar_events = get_all_by_date($events_table);
 	$table = '<table id="tec_calendar" class="table table-responsive table-hover"><thead>';
@@ -165,18 +172,23 @@ function tec_display_calendar($admin=false) {
 	return $table;
 }
 
-function tec_display_upcoming_events($atts) {
-	global $wpdb, $events_table;
-	$query = "SELECT * FROM " . $events_table . " WHERE date >= DATE_FORMAT(NOW(),'%Y-%m-%d') ORDER BY date ASC LIMIT 3;";
-	$upcoming_events = $wpdb->get_results($query);
-	$event_page = get_page_by_title('Event');
-	if($upcoming_events != '') {
-		echo '<ul>';
+function tec_get_upcoming_events() {
+	global $events_table;
+	$upcoming_events = get_recent_items($events_table, 3);
+	$ul = '';
+	if($upcoming_events != '') {	
+		$event_page = get_page_by_title('Event');
+		$ul = '<ul id="tec_upcoming">';
 		foreach($upcoming_events as $event) {
-			echo '<li><a href="/?page_id=' . $event_page->ID . '&title=' . $event->title . '&date=' . $event->date . '"><h3>' . $event->title . '</h3><h3 class="date">' . tec_format_date($event->date, '-', '.') . '</h3></a>' . $event->brief . '</li></br>';
+			$ul .= '<li><span class="event_title">';
+			$ul .= $event->title;
+			$ul .= '</span><span class="event_date">';
+			$ul .= tec_format_date($event->date,'-','/');
+			$ul .= '</span></li>';
 		}
-		echo '</ul>';
-	}		
+		$ul .= '</ul>';
+	}	
+	return $ul;
 }
 
 function tec_format_date($date, $old, $new) {
@@ -187,12 +199,6 @@ function tec_format_date($date, $old, $new) {
 		$new_date = $pieces[1] . $new . $pieces[2] . $new . $pieces[0];
 	}
 	return $new_date;
-}
-
-function tec_add_event_vars($vars) {
-	$vars[0] = 'title';
-	$vars[1] = 'date';
-	return $vars;
 }
 
 function tec_event_template() {

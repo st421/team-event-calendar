@@ -6,9 +6,9 @@ jQuery(document).ready(function(){
 	jQuery("td.delete").click(function() {
 		var $this = jQuery(this);
 		var data = {
-			'action': 'tec_delete_event', 
-			'id': $this.attr('id'),
-			'security': '<?php echo $nonce; ?>'
+			'action':'tec_delete_event', 
+			'id':$this.attr('id'),
+			'security':'<?php echo $nonce; ?>'
 		};
 		jQuery.post(ajaxurl, data, function(response) {
 			$this.parent().fadeOut('slow');
@@ -19,4 +19,4 @@ jQuery(document).ready(function(){
 </script>
 <h1>Team Events Calendar Plugin</h1>
 <h3>Events</h3>
-<?php tec_admin_calendar(); ?>
+<?php tec_display_admin_calendar(); ?>

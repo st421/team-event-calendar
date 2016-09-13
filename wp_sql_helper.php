@@ -28,8 +28,7 @@ function create_table($table_name, $table_params) {
  * Drops the table with the given name, if it exists.
  */
 function drop_table($table_name) {
-	global $wpdb;
-	$wpdb->query("DROP TABLE IF EXISTS " . $table_name . ";");
+	return do_query("DROP TABLE IF EXISTS " . $table_name . ";");
 }
 
 /*
@@ -53,18 +52,13 @@ function table_exists($table_name) {
 }
 
 /* 
- * Adds or updates the table with the given parameters and POST data.
+ * Adds to the table with the given parameters and POST data.
  */
 function save_table_item($table_name, $table_params, $post_data) {
 	global $wpdb;
 	$result = 0;
-	$id = sanitize_text_field($post_data['id']);
 	$insert = "";
 	$vals = "";
-	if(!empty($id)) {
-		$insert .= "id,";
-		$vals .= "'" . $id . "',";
-	}
 	foreach($table_params as $param) {
 		$insert .= $param->name . ",";
 		if($param->name == "date") {
@@ -75,15 +69,33 @@ function save_table_item($table_name, $table_params, $post_data) {
 	$vals = substr($vals, 0, -1);
 	$insert = substr($insert, 0, -1);
 	$query = "INSERT INTO " . $table_name . " (" . $insert . ") VALUES (" . $vals . ");";
-	if($wpdb->query($query)) {
-		$result = 1;
+	return do_query($query);
+}
+
+function update_table_item($table_name, $table_params, $post_data) {
+	$result = 0;
+	$id = sanitize_text_field($post_data['id']);
+	$vals .= "";
+	foreach($table_params as $param) {
+		if($param->name == "date") {
+	    	$post_data["date"] = tec_format_date(sanitize_text_field($post_data["date"]), '/', '-');
+		}
+		$vals .= $param->name . "='" . sanitize_text_field($post_data[$param->name]) . "',";
 	}
-	return $result;
+	$vals = substr($vals, 0, -1);
+	$query = "UPDATE " . $table_name . " SET " . $vals . " WHERE ID=" . $id . ";";
+	return do_query($query);
 }
 
 function get_all_by_date($table_name) {
 	global $wpdb;
 	return $wpdb->get_results("SELECT * FROM " . $table_name . " ORDER BY date ASC;");
+}
+
+function get_recent_items($table_name, $num_items) {
+	global $wpdb;
+	$query = "SELECT * FROM " . $table_name . " WHERE date >= DATE_FORMAT(NOW(),'%Y-%m-%d') ORDER BY date ASC LIMIT " . $num_items . ";";
+	return $wpdb->get_results($query);
 }
 
 function get_item_by_id($table_name, $id) {
@@ -93,10 +105,14 @@ function get_item_by_id($table_name, $id) {
 }
 
 function delete_table_item($table_name, $post_data) {
-	global $wpdb;
 	$id = $post_data['id'];
 	$query = "DELETE FROM " . $table_name . " WHERE id='" . $id . "';";
-	$wpdb->query($query);
+	return do_query($query);
+}
+
+function do_query($query) {
+	global $wpdb;
+	return $wpdb->query($query);
 }
 
 function format_date($date, $old, $new) {

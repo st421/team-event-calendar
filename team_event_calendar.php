@@ -8,7 +8,7 @@
     Author URI: http://susanltyler.com
 */
 
-include('wp_sql_helper.php');
+require_once(ABSPATH . '/wp-content/plugins/wp-sql-helper/wp_sql_helper.php');
 
 global $events_table, $event_params, $wpdb;
 $events_table = $wpdb->prefix . "tec_events";

@@ -8,7 +8,7 @@
     Author URI: http://susanltyler.com
 */
 
-require_once(ABSPATH . '/wp-content/plugins/wp-sql-helper/wp_sql_helper.php');
+require_once(ABSPATH . '/wp-content/plugins/wp-plugin-helper/wp_display_helper.php');
 
 global $events_table, $event_params, $wpdb;
 $events_table = $wpdb->prefix . "tec_events";
@@ -68,25 +68,18 @@ function tec_event_page() {
 	include('tec_event_page.php');
 }
 
-function tec_display_user_calendar($atts) {
-	echo tec_get_calendar();
-}
-
-function tec_display_admin_calendar() {
-	echo tec_get_calendar(true);
-}
-
 function tec_display_upcoming_events($atts) {
 	echo tec_get_upcoming_events();
 }
 
 function tec_edit_event_form($id) {
-	global $events_table;
-	return tec_event_form(true, get_item_by_id($events_table, $id));
+	global $events_table, $event_params;
+	echo get_basic_form($event_params, "event_form", true, get_item_by_id($events_table, $id));
 }
 
 function tec_add_event_form() {
-	return tec_event_form();
+	global $event_params;
+	echo get_basic_form($event_params, "event_form");
 }
 
 function tec_save_event() {
@@ -112,32 +105,17 @@ function tec_delete_event() {
 	die();
 }
 
-function tec_event_form($edit=false, $event=NULL) {
-	global $event_params;
-	$form = '<form id="event_form">';
-	foreach($event_params as $param) {
-		$form .= '<div class="form-group">';
-		$form .= '<label for="' . $param->name . '">' . $param->name . '</label>';
-		if($param->name == 'description') {
-			$form .= '<textarea type="text" class="form-control" id="' . $param->name . '" COLS=100 ROWS=5>';
-			if($edit) {
-				$form .= get_object_vars($event)[$param->name];
-			}
-			$form .= '</textarea>';
-		} else {
-			$form .= '<input type="text" class="form-control" id="' . $param->name . '"';
-			if($edit) {
-				$form .= ' value="' . get_object_vars($event)[$param->name] . '"';
-			}
-			$form .= '>';	
-		}
-		$form .= '</div>';
-	}
-	$form .= '<button type="submit" name="' . $event->id . '" id="submit_event_form" class="btn">Submit</button></form>';
-	return $form;
+function tec_display_user_calendar($atts) {
+	global $events_table, $event_params;
+	echo get_basic_table($events_table, $event_params, "tec_calendar");
 }
 
-function tec_get_calendar($admin=false) {
+function tec_display_admin_calendar() {
+	global $events_table, $event_params;
+	echo get_admin_table($events_table, $event_params, "tec_calendar", "title", "tec-event");
+}
+
+/*function tec_get_calendar($admin=false) {
 	global $events_table, $event_params;
 	$calendar_events = get_all_by_date($events_table);
 	$table = '<table id="tec_calendar" class="table table-responsive table-hover"><thead>';
@@ -170,7 +148,7 @@ function tec_get_calendar($admin=false) {
 	}
 	$table .= '</tbody></table>';
 	return $table;
-}
+}*/
 
 function tec_get_upcoming_events() {
 	global $events_table;
@@ -183,22 +161,12 @@ function tec_get_upcoming_events() {
 			$ul .= '<li><span class="event_title">';
 			$ul .= $event->title;
 			$ul .= '</span><span class="event_date">';
-			$ul .= tec_format_date($event->date,'-','/');
+			$ul .= format_date($event->date,'-','/');
 			$ul .= '</span></li>';
 		}
 		$ul .= '</ul>';
 	}	
 	return $ul;
-}
-
-function tec_format_date($date, $old, $new) {
-	$pieces = explode($old,$date);
-	if($new == '-') {
-		$new_date = $pieces[2] . $new . $pieces[0] . $new . $pieces[1];
-	} else {
-		$new_date = $pieces[1] . $new . $pieces[2] . $new . $pieces[0];
-	}
-	return $new_date;
 }
 
 function tec_event_template() {

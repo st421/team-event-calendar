@@ -1,16 +1,20 @@
 <?php  
 /*
-    Plugin Name: Team Event Calendar
-    Plugin URI: http://susanltyler.com/team-event-calendar-plugin
-    Description: An event calendar for easy display of upcoming events.
-    Author: S. Tyler 
-    Version: 1.0 
-    Author URI: http://susanltyler.com
+  Plugin Name: Team Event Calendar
+  Plugin URI: http://susanltyler.com/team-event-calendar-plugin
+  Description: An event calendar that provides event entry, storage, editing, and 
+  display. Geared towards teams or other groups that need to display season
+  calendars and upcoming events on their Wordpress site.
+  Author: S. Tyler 
+  Version: 2.0 
+  Author URI: http://susanltyler.com
 */
 
 require_once(ABSPATH . '/wp-content/plugins/wp-plugin-helper/wp_display_helper.php');
 
+// must be declared globally to work during install/uninstall
 global $events_table, $event_params, $wpdb;
+
 $events_table = $wpdb->prefix . "tec_events";
 $event_params = array(
   new TableField("title","VARCHAR(255)"),
@@ -31,8 +35,8 @@ add_action('wp_ajax_tec_save_event','tec_save_event');
 add_action('wp_ajax_tec_delete_event','tec_delete_event');
 
 /*
- * Calls functions necessary for plugin install.
- * -Creates table in database for events.
+  Calls functions necessary for plugin install.
+  -Creates table in database for events.
  */
 function tec_install() {
 	global $events_table, $event_params;
@@ -40,8 +44,8 @@ function tec_install() {
 }
 
 /*
- * Calls functions necessary for plugin uninstall. 
- * -Drops events table in database.
+  Calls functions necessary for plugin uninstall. 
+  -Drops events table in database.
  */
 function tec_uninstall() {
 	global $events_table;
@@ -49,7 +53,7 @@ function tec_uninstall() {
 }
 
 /*
- * Registers style sheets and menu pages.
+  Registers style sheets and menu pages.
  */
 function tec_admin_setup() {  
 	wp_register_style('bootstrap', '//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css');
@@ -60,23 +64,56 @@ function tec_admin_setup() {
 	add_submenu_page(NULL, 'Edit Event', 'Edit Event', 'administrator', 'tec-event', 'tec_event_page');
 } 
 
+/*
+  Called by add_menu_page to provide main plugin menu page.
+ */
 function tec_admin() {  
 	include('tec_admin_page.php');  
 }
 
+/*
+  Called by add_submenu_page to provide plugin page for adding/updating
+  events.
+ */
 function tec_event_page() {
 	include('tec_event_page.php');
 }
 
+/*
+  Shortcode function for displaying upcoming events.
+ */
 function tec_display_upcoming_events($atts) {
 	echo tec_get_upcoming_events();
 }
 
+/*
+  Shortcode function for displaying all events in a table.
+ */
+function tec_display_user_calendar($atts) {
+	global $events_table, $event_params;
+	echo get_basic_table($events_table, $event_params, "tec_calendar");
+}
+
+/*
+  Displays a calendar with all events, plus a link to an edit page for each
+  event and a column allowing the admin user to delete entries with one click.
+ */
+function tec_display_admin_calendar() {
+	global $events_table, $event_params;
+	echo get_admin_table($events_table, $event_params, "tec_calendar", "title", "tec-event");
+}
+
+/*
+  Returns a form for editing an event.
+ */
 function tec_edit_event_form($id) {
 	global $events_table, $event_params;
 	echo get_basic_form($event_params, "event_form", true, get_item_by_id($events_table, $id));
 }
 
+/*
+  Returns a form for adding an event.
+ */
 function tec_add_event_form() {
 	global $event_params;
 	echo get_basic_form($event_params, "event_form");
@@ -105,51 +142,9 @@ function tec_delete_event() {
 	die();
 }
 
-function tec_display_user_calendar($atts) {
-	global $events_table, $event_params;
-	echo get_basic_table($events_table, $event_params, "tec_calendar");
-}
-
-function tec_display_admin_calendar() {
-	global $events_table, $event_params;
-	echo get_admin_table($events_table, $event_params, "tec_calendar", "title", "tec-event");
-}
-
-/*function tec_get_calendar($admin=false) {
-	global $events_table, $event_params;
-	$calendar_events = get_all_by_date($events_table);
-	$table = '<table id="tec_calendar" class="table table-responsive table-hover"><thead>';
-	foreach($event_params as $param) {
-		$table .= '<th>' . $param->name . '</th>';
-	}
-	if($admin) {
-		$table .= '<th>Delete?</th>';
-	}
-	$table .= '</thead><tbody>';
-	foreach($calendar_events as $event) {
-		$table .= '<tr>';
-		foreach($event_params as $param) {
-			$table .= '<td>';
-			if($param->name == 'date') {
-				$table .= tec_format_date($event->date,'-','/');
-			} else if($param->name == 'title' && $admin) {
-				$path = 'admin.php?page=tec-event&id=' . $event->id;
-				$url = admin_url($path);
-				$table .= '<a href="' . $url . '">' . $event->title . '</a>';
-			} else {
-				$table .= get_object_vars($event)[$param->name];
-			}
-			$table .= '</td>';
-		}
-		if($admin) {
-			$table .= '<td id="' . $event->id . '" class="delete"></td>';
-		}
-		$table .= '</tr>';
-	}
-	$table .= '</tbody></table>';
-	return $table;
-}*/
-
+/*
+  Returns an HTML list of upcoming events.
+ */
 function tec_get_upcoming_events() {
 	global $events_table;
 	$upcoming_events = get_recent_items($events_table, 3);
@@ -161,7 +156,7 @@ function tec_get_upcoming_events() {
 			$ul .= '<li><span class="event_title">';
 			$ul .= $event->title;
 			$ul .= '</span><span class="event_date">';
-			$ul .= format_date($event->date,'-','/');
+			$ul .= format_date($event->date,'d/m/Y');
 			$ul .= '</span></li>';
 		}
 		$ul .= '</ul>';
@@ -169,10 +164,10 @@ function tec_get_upcoming_events() {
 	return $ul;
 }
 
-function tec_event_template() {
+/*function tec_event_template() {
   if(is_page('event')) {
     $page_template = dirname( __FILE__ ) . '/event.php';
   }
   return $page_template;
-}
+}*/
 ?>

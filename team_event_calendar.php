@@ -119,6 +119,9 @@ function tec_add_event_form() {
 	echo get_basic_form($event_params, "event_form");
 }
 
+/*
+  Saves an event passed by POST data (see tec_event_page.php).
+ */
 function tec_save_event() {
 	check_ajax_referer('tec_nonce_save','security');
 	global $events_table, $event_params;
@@ -135,6 +138,9 @@ function tec_save_event() {
 	die();
 }
 
+/*
+  Deletes an event passed by POST data (see tec_admin_page.php).
+ */
 function tec_delete_event() {
 	check_ajax_referer('tec_nonce_del','security');
 	global $events_table;

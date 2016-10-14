@@ -39,7 +39,7 @@ add_action('wp_ajax_tec_delete_event','tec_delete_event');
   -Creates table in database for events.
  */
 function tec_install() {
-	global $events_table, $event_params;
+	global $events_table, $event_params, $wpdb;
 	create_table($events_table,$event_params);
 }
 

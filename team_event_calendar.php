@@ -10,6 +10,7 @@
   Author URI: http://susanltyler.com
 */
 
+require_once(ABSPATH . '/wp-content/plugins/wp-plugin-helper/wp_plugin_helper.php');
 require_once(ABSPATH . '/wp-content/plugins/wp-plugin-helper/wp_display_helper.php');
 
 // must be declared globally to work during install/uninstall
@@ -33,6 +34,21 @@ add_shortcode('upcoming_events','tec_display_upcoming_events');
 add_action('admin_menu','tec_admin_setup');  
 add_action('wp_ajax_tec_save_event','tec_save_event');
 add_action('wp_ajax_tec_delete_event','tec_delete_event');
+add_action('init','tec_add_rewrite');
+add_action('template_include','tec_direct_template');
+add_filter('query_vars','tec_add_query_vars');
+
+function tec_add_rewrite() {
+	add_rewrite('event');
+}
+
+function tec_add_query_vars($query_vars) {
+	return add_query_vars($query_vars, 'event');
+}
+
+function tec_direct_template($path) {
+	return direct_to_template('event_id', plugin_dir_path(__FILE__) . 'event.php', $path);
+}
 
 /*
   Calls functions necessary for plugin install.
@@ -91,7 +107,7 @@ function tec_display_upcoming_events($atts) {
  */
 function tec_display_user_calendar($atts) {
 	global $events_table, $event_params;
-	echo get_basic_table($events_table, $event_params, "tec_calendar");
+	echo get_table($event_params, get_recent_items($events_table), "tec_calendar");
 }
 
 /*
@@ -100,7 +116,7 @@ function tec_display_user_calendar($atts) {
  */
 function tec_display_admin_calendar() {
 	global $events_table, $event_params;
-	echo get_admin_table($events_table, $event_params, "tec_calendar", "title", "tec-event");
+	echo get_table($event_params, get_recent_items($events_table), "tec_calendar", true, "title", "tec-event");
 }
 
 /*
@@ -151,29 +167,35 @@ function tec_delete_event() {
 /*
   Returns an HTML list of upcoming events.
  */
-function tec_get_upcoming_events() {
+function tec_get_upcoming_events($separator='<\b\r>') {
 	global $events_table;
 	$upcoming_events = get_recent_items($events_table, 3);
 	$ul = '';
 	if($upcoming_events != '') {	
-		$event_page = get_page_by_title('Event');
 		$ul = '<ul id="tec_upcoming">';
 		foreach($upcoming_events as $event) {
-			$ul .= '<li><span class="event_title">';
+			$ul .= '<li><a href="/event/' . $event->id . '"><span class="event_date">';
+			$ul .= format_date($event->date,'M'. $separator . 'd' . $separator . 'Y');
+			$ul .= '</span><span class="event_title">';
 			$ul .= $event->title;
-			$ul .= '</span><span class="event_date">';
-			$ul .= format_date($event->date,'d/m/Y');
-			$ul .= '</span></li>';
+			$ul .= '</span><p>';
+			$ul .= $event->time;
+			$ul .= ' @ ';
+			$ul .= $event->location;
+			$ul .= '</p></a></li>';
 		}
 		$ul .= '</ul>';
 	}	
 	return $ul;
 }
 
-/*function tec_event_template() {
-  if(is_page('event')) {
-    $page_template = dirname( __FILE__ ) . '/event.php';
-  }
-  return $page_template;
-}*/
+function tec_display_event($event) {
+	$result = '<h2>' . $event['title'] . '</h2>';
+	$result .= '<h3>' . format_date($event['date'],'d/m/Y') . '</h3>';
+	$result .= '<p><b>Time: </b>' . $event['time'] . '</p>';
+	$result .= '<p><b>Location: </b>' . $event['location'] . '</p>';
+	$result .= '<p>' . $event['description'] . '</p>';
+	return $result;
+}
+
 ?>

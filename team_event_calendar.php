@@ -55,6 +55,7 @@ function tec_direct_template($path) {
   -Creates table in database for events.
  */
 function tec_install() {
+        flush_rewrite_rules();
 	global $events_table, $event_params, $wpdb;
 	create_table($events_table,$event_params);
 }
